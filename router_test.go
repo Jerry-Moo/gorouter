@@ -55,3 +55,44 @@ func TestRouter_URL_SUFFIX(t *testing.T) {
 		t.Errorf(errorFormat, rr.Body.String(), expected)
 	}
 }
+
+// Test POST
+func TestRouter_POST(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodPost, "/hi", nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.POST("/hi", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test PATCH
+func TestRouter_PATCH(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodPatch, "/hi", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.PATCH("/hi", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}

@@ -84,13 +84,13 @@ func (r *Router) DELETE(path string, handle http.HandlerFunc) {
 // PUT adds the route `path` that matches a DELETE http method to
 // execute the `handle` http.HandlerFunc.
 func (r *Router) PUT(path string, handle http.HandlerFunc) {
-	r.Handle(http.MethodDelete, path, handle)
+	r.Handle(http.MethodPut, path, handle)
 }
 
 // PATCH adds the route `path` that matches a DELETE http method to
 // execute the `handle` http.HandlerFunc.
 func (r *Router) PATCH(path string, handle http.HandlerFunc) {
-	r.Handle(http.MethodDelete, path, handle)
+	r.Handle(http.MethodPatch, path, handle)
 }
 
 // GETAndName is short for `GET` and Named routeName
