@@ -34,3 +34,24 @@ func TestRouter_GET(t *testing.T) {
 		t.Errorf(errorFormat, rr.Body.String(), expected)
 	}
 }
+
+// 测试 URL 后缀
+func TestRouter_URL_SUFFIX(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/hello/", nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.GET("/hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
