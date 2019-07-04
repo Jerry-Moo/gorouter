@@ -233,6 +233,13 @@ func GetAllParams(r *http.Request) paramsMapType {
 	return nil
 }
 
+// Use appends a middleware handler to the middleware stack.
+func (r *Router) Use(middleware ...MiddlewareType) {
+	if len(middleware) > 0 {
+		r.middleware = append(r.middleware, middleware...)
+	}
+}
+
 // ServeHTTP makes the router implement the http.Handler interface.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	requestUrl := req.URL.Path

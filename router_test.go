@@ -205,13 +205,12 @@ func TestRouter_HandleNotFound(t *testing.T) {
 	}
 }
 
-
 // Test CustomPanicHandler
 func TestRouter_CustomPanicHandler(t *testing.T) {
 	router := New()
 	rr := httptest.NewRecorder()
 
-	req ,err := http.NewRequest(http.MethodPost, "/xxx", nil)
+	req, err := http.NewRequest(http.MethodPost, "/xxx", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,14 +242,13 @@ func TestRouter_NotFoundMethod(t *testing.T) {
 	router.ServeHTTP(rr, req)
 }
 
-
 // Test GetParam
 func TestGetParam(t *testing.T) {
 	router := New()
 	rr := httptest.NewRecorder()
 
 	param := "1"
-	req, err := http.NewRequest(http.MethodGet, "/test/" + param, nil)
+	req, err := http.NewRequest(http.MethodGet, "/test/"+param, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,4 +260,201 @@ func TestGetParam(t *testing.T) {
 		}
 	})
 	router.ServeHTTP(rr, req)
+}
+
+// Test GetAllParams
+func TestGetAllParams(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	param1 := "1"
+	param2 := "2"
+
+	req, err := http.NewRequest(http.MethodGet, "/param1/"+param1+"/param2/"+param2, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.GET("/param1/:param1/param2/:param2", func(w http.ResponseWriter, r *http.Request) {
+		params := GetAllParams(r)
+		if params["param1"] != param1 {
+			t.Fatal("TestGetAllParams test fail")
+		}
+		if params["param2"] != param2 {
+			t.Fatal("TestGetAllParams test fail")
+		}
+	})
+	router.ServeHTTP(rr, req)
+}
+
+// Test ParamsMiss
+func TestGetAllParamsMiss(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/param1", nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.GET("/param1", func(w http.ResponseWriter, r *http.Request) {
+		params := GetAllParams(r)
+
+		if params != nil {
+			t.Fatal("TestGetAllParams test fail")
+		}
+	})
+	router.ServeHTTP(rr, req)
+}
+
+// logHandlfunc
+func withLoggint(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// log.Printf("Logged connection from %s,", r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	}
+}
+
+// Test Use
+func TestRouter_Use(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/hi", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.Use(withLoggint)
+	router.GET("/hi", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test UserFroRoot
+func TestRouter_UseForRoot(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.Use(withLoggint)
+	expected := "hi index"
+	router.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test Regex
+func TestRouter_Regex(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/param/1", nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.GET("/param/{id:[0-9]+}", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+		id := GetParam(r, "id")
+		if id != "1" {
+			t.Fatal("TestGetAllParams test fail")
+		}
+	})
+
+	router.ServeHTTP(rr, req)
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test HandleRoot
+func TestRouter_HandleRoot(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := "hi,root"
+	router.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+	router.ServeHTTP(rr, req)
+
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test HandlePanic
+func TestRouter_HandlePanic(t *testing.T) {
+	router := New()
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log("Recovered in f", r)
+		}
+	}()
+
+	router.Handle("", "/hi", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	})
+
+	router.ServeHTTP(rr, req)
+	if rr.Body.String() != expected {
+		t.Errorf(errorFormat, rr.Body.String(), expected)
+	}
+}
+
+// Test Match
+func TestRouter_Match(t *testing.T) {
+	router := New()
+	requestUrl := "/xxx/1/yyy/2"
+
+	ok := router.Match(requestUrl, "/xxx/:param1/yyy/:param2")
+	if !ok {
+		t.Fatal("TestRouter_match test fail")
+	}
+
+	errorRequestUrl := "#xxx#1#yyy#2"
+	ok = router.Match(errorRequestUrl, "/xxx/:param1/yyy/:param2")
+	if ok {
+		t.Fatal("TestRouter_Match test fail")
+	}
+
+	errorPath := "#xxx#1#yyy#2"
+	ok = router.Match(errorRequestUrl, errorPath)
+	if ok {
+		t.Fatal("TestRouter_Match test fail")
+	}
+
+	missRequestUrl := "/xxx/1/yyy/###"
+	ok = router.Match(missRequestUrl, "/xxx/:param1/yyy/:param2")
+
+	if ok {
+		t.Fatal("TestRouter_match test fail")
+	}
 }
